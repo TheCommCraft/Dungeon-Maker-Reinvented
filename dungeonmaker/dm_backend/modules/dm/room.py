@@ -1,9 +1,11 @@
 """
 Submodule for dungeons.
 """
+from typing import Self
 from .dmtypes import RoomId, BaseDungeon, BaseRoom
 from . import dungeon
-from . import session
+from .session import database_abstraction
+from .utils import s_vars
 
 class Room(BaseRoom):
     """
@@ -16,12 +18,22 @@ class Room(BaseRoom):
         return dungeon.Dungeon.read(self.dungeon_id)
     
     @classmethod
-    def read(cls, room_id : RoomId):
-        data = session.database_abstraction.select_room(room_id=room_id)
-        return cls(room_id=data["room_id"], dungeon_id=data["dungeon_id"], content=data["content"])
+    def read(cls, room_id : RoomId) -> Self:
+        """
+        Classmethod for reading a room.
+        """
+        data = database_abstraction.select_room(room_id=room_id)
+        return cls(**data)
     
     def write(self):
-        session.database_abstraction.update_room(room_id=self.room_id, updator={"content": self.content})
+        """
+        Method for writing a room.
+        """
+        if self.new:
+            self.new = False
+            database_abstraction.insert_room(data=s_vars(self))
+            return
+        database_abstraction.update_room(room_id=self.room_id, updator=s_vars(self))
 
 
 

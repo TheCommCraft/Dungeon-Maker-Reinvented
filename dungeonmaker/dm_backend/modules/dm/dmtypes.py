@@ -3,7 +3,11 @@ Types used in the dm library
 """
 from typing import Literal, Any
 from dataclasses import dataclass, field
-import json
+import secrets
+
+
+
+
 
 
 type RoomId = int
@@ -27,19 +31,6 @@ class Permition:
         ] = field(kw_only=True)
     value: Any = field(kw_only=True)
 
-    def encode(self) -> str:
-        """
-        Encode a permition.
-        """
-        return json.dumps({"type": self.type, "value": self.value})
-
-    @classmethod
-    def decode(cls, string : str):
-        """
-        Decode a permition.
-        """
-        return cls(*json.loads(string))
-
 
 
 class Permitions(list[Permition]):
@@ -47,7 +38,7 @@ class Permitions(list[Permition]):
     Class for containing a list of permitions.
     """
     def get(self, __type : Any) -> Permition:
-        return [i for i in self if i.type == __type][0]
+        return ([i for i in self if i.type == __type] + [Permition(type=__type, value=None)])[0]
 
 
 
@@ -59,9 +50,10 @@ class BaseRoom:
     """
     Base class for rooms.
     """
-    room_id : RoomId = field(kw_only=True)
+    room_id : RoomId = field(kw_only=True, default_factory=lambda : secrets.randbits(64))
     dungeon_id : DungeonId = field(kw_only=True)
     content : Any = field(kw_only=True, default=None)
+    new : bool = field(kw_only=True, default=False)
 
 
 
@@ -73,9 +65,13 @@ class BaseDungeon:
     """
     rooms : list[RoomId] = field(kw_only=True)
     owner : UserId = field(kw_only=True)
-    permitions : dict[UserId, list[Permition]] = field(kw_only=True)
+    permitions : dict[UserId, Permitions] = field(kw_only=True)
     views : int = field(kw_only=True)
-    likers : list[UserId] = field(kw_only=True)
+    likers : list[UserId] = field(kw_only=True, default_factory=list)
+    new : bool = field(kw_only=True, default=False)
+    dungeon_id : DungeonId = field(kw_only=True, default_factory=lambda : secrets.randbits(64))
+    name : str = field(kw_only=True)
+    description : str = field(kw_only=True)
     
 
 
@@ -97,12 +93,13 @@ class BaseUser:
     """
     Base class for users.
     """
-    user_id : UserId = field(kw_only=True)
+    user_id : UserId = field(kw_only=True, default_factory=lambda : secrets.randbits(64))
     owned_dungeons : list[DungeonId] = field(kw_only=True)
     recent_dungeons : list[DungeonId] = field(kw_only=True)
     permitted_dungeons : list[DungeonId] = field(kw_only=True)
     username : str = field(kw_only=True)
     admin_level : int = field(kw_only=True)
+    new : bool = field(kw_only=True, default=False)
 
 
 
