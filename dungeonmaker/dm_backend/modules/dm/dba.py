@@ -213,7 +213,7 @@ class DatabaseAbstractionSelector(BaseDatabaseAbstraction):
         """
         for dba in self.dbas:
             try:
-                return dba.sort_dungeons(amount=amount, offset=offset, field=field, aggregation=aggregation)
+                return dba.sorted_dungeons(amount=amount, offset=offset, field=field, aggregation=aggregation)
             except NotImplementedError:
                 continue
         raise NotImplementedError("No database abstraction capable of doing that was added")

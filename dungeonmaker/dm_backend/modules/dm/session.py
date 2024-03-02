@@ -28,6 +28,12 @@ def get_random_tab(*, amount : int = 20):
     """
     return [dungeon.Dungeon(**dungeon_data) for dungeon_data in database_abstraction.random_dungeons(amount=amount)]
 
+def get_newest_tab(*, offset : int = 0, amount : int = 20):
+    """
+    Get a default of 20 dungeons of the newest dungeons. 
+    """
+    return [dungeon.Dungeon(**dungeon_data) for dungeon_data in database_abstraction.sorted_dungeons(offset=offset, amount=amount, field="creation_time", aggregation=[])]
+
 
 
 
