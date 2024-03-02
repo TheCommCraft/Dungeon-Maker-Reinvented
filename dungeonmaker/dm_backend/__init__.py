@@ -1,2 +1,2 @@
-from modules import database
-from modules import dm
+from .modules import database
+from .modules import dm
