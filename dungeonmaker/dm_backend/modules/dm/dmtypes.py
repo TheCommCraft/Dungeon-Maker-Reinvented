@@ -50,7 +50,7 @@ class BaseRoom:
     """
     Base class for rooms.
     """
-    room_id : RoomId = field(kw_only=True, default_factory=lambda : secrets.randbits(64))
+    room_id : RoomId = field(kw_only=True, default_factory=lambda : secrets.randbits(32))
     dungeon_id : DungeonId = field(kw_only=True)
     content : Any = field(kw_only=True, default=None)
     new : bool = field(kw_only=True, default=False)
@@ -70,7 +70,7 @@ class BaseDungeon:
     views : int = field(kw_only=True)
     likers : list[UserId] = field(kw_only=True, default_factory=list)
     new : bool = field(kw_only=True, default=False)
-    dungeon_id : DungeonId = field(kw_only=True, default_factory=lambda : secrets.randbits(64))
+    dungeon_id : DungeonId = field(kw_only=True, default_factory=lambda : secrets.randbits(32))
     name : str = field(kw_only=True)
     description : str = field(kw_only=True)
     creation_time : float = field(kw_only=True, default_factory=time.time)
@@ -97,7 +97,7 @@ class BaseUser:
     """
     Base class for users.
     """
-    user_id : UserId = field(kw_only=True, default_factory=lambda : secrets.randbits(64))
+    user_id : UserId = field(kw_only=True, default_factory=lambda : secrets.randbits(32))
     owned_dungeons : list[DungeonId] = field(kw_only=True)
     recent_dungeons : list[DungeonId] = field(kw_only=True)
     permitted_dungeons : list[DungeonId] = field(kw_only=True)

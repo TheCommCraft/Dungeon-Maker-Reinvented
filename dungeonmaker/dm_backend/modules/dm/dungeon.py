@@ -1,7 +1,7 @@
 """
 Submodule for dungeons.
 """
-import time
+import time, copy
 from typing import Self
 from .dmtypes import (
     DungeonId, 
@@ -69,11 +69,14 @@ class Dungeon(BaseDungeon):
         """
         Method for writing a dungeon.
         """
+        data = copy.deepcopy(s_vars(self))
+        for _, perms in (data["permitions"]).items():
+            perms[:] = [{"type": perm.type, "value": perm.value} for perm in perms]
         if self.new:
             self.new = False
-            database_abstraction.insert_dungeon(data=s_vars(self))
+            database_abstraction.insert_dungeon(data=data)
             return
-        database_abstraction.update_dungeon(dungeon_id=self.dungeon_id, updator={"$set": s_vars(self)})
+        database_abstraction.update_dungeon(dungeon_id=self.dungeon_id, updator={"$set": data})
         
     def new_room(self, content : str = None) -> Room:
         """
