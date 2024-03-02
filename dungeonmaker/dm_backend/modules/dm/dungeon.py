@@ -1,6 +1,7 @@
 """
 Submodule for dungeons.
 """
+import time
 from typing import Self
 from .dmtypes import (
     DungeonId, 
@@ -72,7 +73,7 @@ class Dungeon(BaseDungeon):
             self.new = False
             database_abstraction.insert_dungeon(data=s_vars(self))
             return
-        database_abstraction.update_dungeon(dungeon_id=self.dungeon_id, updator=s_vars(self))
+        database_abstraction.update_dungeon(dungeon_id=self.dungeon_id, updator={"$set": s_vars(self)})
         
     def new_room(self, content : str = None) -> Room:
         """
@@ -81,6 +82,9 @@ class Dungeon(BaseDungeon):
         new_room = Room(content=content, dungeon_id=self.dungeon_id, new=True)
         self.rooms.append(new_room.room_id)
         return new_room
+    
+    def log_update(self):
+        self.update_time = time.time()
 
 class DungeonUser(BaseDungeonUser):
     """

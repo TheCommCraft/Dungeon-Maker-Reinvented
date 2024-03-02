@@ -35,7 +35,7 @@ class User(BaseUser):
             self.new = False
             database_abstraction.insert_user(data=s_vars(self))
             return
-        database_abstraction.update_user(user_id=self.user_id, updator=s_vars(self))
+        database_abstraction.update_user(user_id=self.user_id, updator={"$set": s_vars(self)})
 
 
 

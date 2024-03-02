@@ -33,7 +33,7 @@ class Room(BaseRoom):
             self.new = False
             database_abstraction.insert_room(data=s_vars(self))
             return
-        database_abstraction.update_room(room_id=self.room_id, updator=s_vars(self))
+        database_abstraction.update_room(room_id=self.room_id, updator={"$set": s_vars(self)})
 
 
 

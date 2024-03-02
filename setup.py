@@ -5,7 +5,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name='dungeonmaker',
-    version='0.1.1',
+    version='0.2.1',
     author='Simon Gilde',
     author_email='simon.c.gilde@gmail.com',
     description='Dungeon maker backend and other things',
@@ -25,6 +25,7 @@ setup(
     keywords=['scratch'],
     install_requires=[
         'scratchcommunication',
+        'pymongo'
     ],
     python_requires='>=3.10',
 )

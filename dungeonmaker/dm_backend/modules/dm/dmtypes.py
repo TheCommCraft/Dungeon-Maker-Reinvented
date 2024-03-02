@@ -3,7 +3,7 @@ Types used in the dm library
 """
 from typing import Literal, Any
 from dataclasses import dataclass, field
-import secrets
+import secrets, time
 
 
 
@@ -54,6 +54,7 @@ class BaseRoom:
     dungeon_id : DungeonId = field(kw_only=True)
     content : Any = field(kw_only=True, default=None)
     new : bool = field(kw_only=True, default=False)
+    _id : Any = field(kw_only=True, default=None)
 
 
 
@@ -72,7 +73,10 @@ class BaseDungeon:
     dungeon_id : DungeonId = field(kw_only=True, default_factory=lambda : secrets.randbits(64))
     name : str = field(kw_only=True)
     description : str = field(kw_only=True)
-    
+    creation_time : float = field(kw_only=True, default_factory=time.time)
+    update_time : float = field(kw_only=True, default_factory=time.time)
+    _id : Any = field(kw_only=True, default=None)
+    score : Any = field(kw_only=True, default=None)
 
 
 
@@ -100,6 +104,7 @@ class BaseUser:
     username : str = field(kw_only=True)
     admin_level : int = field(kw_only=True)
     new : bool = field(kw_only=True, default=False)
+    _id : Any = field(kw_only=True, default=None)
 
 
 
