@@ -46,8 +46,9 @@ class Permitions(list[Permition]):
     """
     Class for containing a list of permitions.
     """
-    def get(self, type):
-        return [i for i in self if i.type == type][0]
+    def get(self, __type : Any) -> Permition:
+        return [i for i in self if i.type == __type][0]
+
 
 
 
@@ -60,6 +61,7 @@ class BaseRoom:
     """
     room_id : RoomId = field(kw_only=True)
     dungeon_id : DungeonId = field(kw_only=True)
+    content : Any = field(kw_only=True, default=None)
 
 
 
