@@ -42,7 +42,39 @@ def get_newest_tab(*, offset : int = 0, amount : int = 20):
     """
     return [dungeon.Dungeon(**dungeon_data) for dungeon_data in database_abstraction.sorted_dungeons(offset=offset, amount=amount, field="creation_time", aggregation=[])]
 
-
+def search_for_term(term : str, *, amount : int = 10):
+    aggregator = [
+        {
+            "$search": {
+                "index": "namesearch",
+                "text": {
+                    "query": term,
+                    "path": {
+                        "wildcard": "*"
+                    },
+                    "fuzzy": {
+                        "maxEdits": 2,
+                        "maxExpansions": 2
+                    }
+                }
+            }
+        },
+        {
+            "$addFields": {
+                "score": {
+                    "$add": [
+                        {"$multiply": 
+                            [
+                                20, {"$size": "$likers" }
+                            ] 
+                        }, 
+                        "$views"
+                    ]
+                }
+            }
+        }
+    ]
+    return [dungeon.Dungeon(**dungeon_data) for dungeon_data in database_abstraction.sorted_dungeons(amount=amount, field="score", aggregation=aggregator)]
 
 
 

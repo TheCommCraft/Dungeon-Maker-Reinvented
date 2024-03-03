@@ -70,6 +70,7 @@ class Dungeon(BaseDungeon):
         Method for writing a dungeon.
         """
         data = copy.deepcopy(s_vars(self))
+        data["new"] = False
         for _, perms in (data["permitions"]).items():
             perms[:] = [{"type": perm.type, "value": perm.value} for perm in perms]
         if self.new:
