@@ -64,12 +64,12 @@ class BaseDungeon:
     """
     Base class for dungeons.
     """
-    rooms : list[RoomId] = field(kw_only=True)
+    rooms : list[RoomId] = field(kw_only=True, default_factory=list)
     owner : UserId = field(kw_only=True)
     permitions : dict[UserId, Permitions] = field(kw_only=True)
-    views : int = field(kw_only=True)
+    views : int = field(kw_only=True, default=0)
     likers : list[UserId] = field(kw_only=True, default_factory=list)
-    new : bool = field(kw_only=True, default=False)
+    new : bool = field(kw_only=True, default=True)
     dungeon_id : DungeonId = field(kw_only=True, default_factory=lambda : secrets.randbits(32))
     name : str = field(kw_only=True)
     description : str = field(kw_only=True)
