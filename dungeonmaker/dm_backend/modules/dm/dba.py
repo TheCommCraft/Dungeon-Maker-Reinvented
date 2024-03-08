@@ -204,7 +204,7 @@ class DatabaseAbstractionSelector(BaseDatabaseAbstraction):
         self, 
         *, 
         amount : int = 20, 
-        offset : int = 0,
+        offset : int = 0, 
         field : str = "score", 
         aggregation : list[dict] = [{"$addFields":{"score": {"$add": [{"$multiply": [20,{"$size": "$likers"},]},"$views"]}}}]
     ) -> list[dict]:

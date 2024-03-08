@@ -33,8 +33,8 @@ def get_default_tab(*, offset : int = 0, amount : int = 20):
     """
     Get a default of 20 dungeons of random dungeons. 
     """
-    data = [dungeon.Dungeon(**dungeon_data) for dungeon_data in database_abstraction.sorted_dungeons(amount=amount, aggregation=[{"$sample": {"size": amount * 3}}, {"$addFields": {"score": {"$add": [{"$multiply": [20, {"$size": "$likers" }] }, "$views"]}}}])]
-    return data[:amount // 20] + random.sample(data[amount // 20:], amount - amount // 2)
+    data = [dungeon.Dungeon(**dungeon_data) for dungeon_data in database_abstraction.sorted_dungeons(amount=3*amount, aggregation=[{"$sample": {"size": amount * 3}}, {"$addFields": {"score": {"$add": [{"$multiply": [20, {"$size": "$likers" }] }, "$views"]}}}])]
+    return data[:amount // 2] + random.sample(data[amount // 2:], amount - amount // 2)
 
 def get_newest_tab(*, offset : int = 0, amount : int = 20):
     """
