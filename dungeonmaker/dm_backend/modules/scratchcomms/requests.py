@@ -97,7 +97,10 @@ class RequestHandler(BaseRequestHandler):
                 if inspect.Parameter.empty == annotation.annotation:
                     continue
                 if not arg in kwargs:
-                    args[idx] = annotation.annotation(args[idx])
+                    try:
+                        args[idx] = annotation.annotation(args[idx])
+                    except IndexError:
+                        pass
                     continue
                 kwargs[arg] = annotation.annotation(kwargs[arg])
             if inspect.signature(request_handling_function).return_annotation:
