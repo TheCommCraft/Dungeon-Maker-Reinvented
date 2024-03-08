@@ -21,7 +21,10 @@ class MongoDBDatabaseAbstraction(BaseDatabaseAbstraction):
         fields = fields or {}
         if user_id is not None:
             fields["user_id"] = user_id
-        return dict(self.connection.users.find_one(fields))
+        data = self.connection.users.find_one(fields)
+        if not data:
+            raise KeyError("User not found.")
+        return dict(data)
     
     def select_dungeon(self, dungeon_id : DungeonId = None, *, fields : dict = None) -> dict:
         """
@@ -30,7 +33,10 @@ class MongoDBDatabaseAbstraction(BaseDatabaseAbstraction):
         fields = fields or {}
         if dungeon_id is not None:
             fields["dungeon_id"] = dungeon_id
-        return dict(self.connection.dungeons.find_one(fields))
+        data = self.connection.dungeons.find_one(fields)
+        if not data:
+            raise KeyError("Dungeon not found.")
+        return dict(data)
     
     def select_room(self, room_id : RoomId = None, *, fields : dict = None) -> dict:
         """
@@ -39,7 +45,10 @@ class MongoDBDatabaseAbstraction(BaseDatabaseAbstraction):
         fields = fields or {}
         if room_id is not None:
             fields["room_id"] = room_id
-        return dict(self.connection.rooms.find_one(fields))
+        data = self.connection.rooms.find_one(fields)
+        if not data:
+            raise KeyError("Room not found.")
+        return dict(data)
     
     def update_user(self, user_id : UserId = None, *, fields : dict = None, updator : dict = None):
         """

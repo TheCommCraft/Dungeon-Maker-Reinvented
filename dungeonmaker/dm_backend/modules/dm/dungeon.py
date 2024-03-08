@@ -15,7 +15,7 @@ from .dmtypes import (
 from .room import Room
 from .user import User
 from . import room
-from .session import database_abstraction
+from . import session as _session
 from .utils import s_vars
 
 class Dungeon(BaseDungeon):
@@ -31,6 +31,7 @@ class Dungeon(BaseDungeon):
             Permition(type="edit_permitions", value=True),
             Permition(type="permition_level", value=999),
         ])
+        kwargs["owner_name"] = User.read(kwargs["owner"], session=kwargs["session"]).username
         super().__init__(*args, **kwargs)
     
     @property
@@ -50,7 +51,7 @@ class Dungeon(BaseDungeon):
         """
         Get a user of the dungeon.
         """
-        user_id = user_id or User.lookup_user(username=username).user_id
+        user_id = user_id or User.lookup_user(username=username, session=self.session).user_id
         permitions = self.permitions.get(user_id, Permitions([Permition(type="read", value=True)]))
         owner = self.owner == user_id
         d_user = DungeonUser(user_id=user_id, permitions=permitions, owner=owner, dungeon=self)
@@ -59,11 +60,12 @@ class Dungeon(BaseDungeon):
         
     
     @classmethod
-    def read(cls, dungeon_id : DungeonId) -> Self:
+    def read(cls, dungeon_id : DungeonId, *, session : _session.DMSession) -> Self:
         """
         Method for reading a dungeon.
         """
-        return cls(**database_abstraction.select_dungeon(dungeon_id=dungeon_id))
+        data = session.database_abstraction.select_dungeon(dungeon_id=dungeon_id)
+        return cls(**data)
     
     def write(self):
         """
@@ -75,15 +77,15 @@ class Dungeon(BaseDungeon):
             perms[:] = [{"type": perm.type, "value": perm.value} for perm in perms]
         if self.new:
             self.new = False
-            database_abstraction.insert_dungeon(data=data)
+            self.session.database_abstraction.insert_dungeon(data=data)
             return
-        database_abstraction.update_dungeon(dungeon_id=self.dungeon_id, updator={"$set": data})
+        self.session.database_abstraction.update_dungeon(dungeon_id=self.dungeon_id, updator={"$set": data})
         
     def new_room(self, content : str = None) -> Room:
         """
         Method for creating a new room.
         """
-        new_room = Room(content=content, dungeon_id=self.dungeon_id, new=True)
+        new_room = Room(content=content, dungeon_id=self.dungeon_id, new=True, session=self.session)
         self.rooms.append(new_room.room_id)
         return new_room
     

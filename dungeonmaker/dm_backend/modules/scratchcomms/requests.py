@@ -1,19 +1,19 @@
 """
 Submodule for handling incoming requests.
 """
-import re, warnings, ast, inspect
-from func_timeout import StoppableThread
+import re, warnings, ast, inspect, traceback
 from typing import Union, Mapping, Sequence, Any
 from types import FunctionType
-from scratchcommunication.cloud_socket import CloudSocketConnection
+from func_timeout import StoppableThread
+from scratchcommunication.cloud_socket import CloudSocketConnection, CloudSocket
 from .basetypes import BaseRequestHandler, StopRequestHandler, NotUsingAThread
 
 class RequestHandler(BaseRequestHandler):
     """
     Class for request handlers.
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *, cloud_socket : CloudSocket, uses_thread : bool = False):
+        super().__init__(cloud_socket=cloud_socket, uses_thread=uses_thread)
         self.project_id = self.cloud_socket.cloud.project_id
         self.requests = {}
         self.thread = None
@@ -56,34 +56,37 @@ class RequestHandler(BaseRequestHandler):
         clients : list[tuple[CloudSocketConnection, str]] = []
         while True:
             try:
-                clients.append(self.cloud_socket.accept(timeout=0))
-            except TimeoutError:
-                pass
-            for client, username in clients:
                 try:
-                    msg = client.recv(timeout=0)
+                    clients.append(self.cloud_socket.accept(timeout=0))
                 except TimeoutError:
-                    continue
-                response = "No response."
-                try:
-                    self.current_client = client
-                    self.current_client_username = username
-                    raw_sub_requests = [raw_request.strip() for raw_request in msg.split(";")]
-                    sub_request_names = [re.match(r"\w+", raw_request).group() for raw_request in raw_sub_requests]
-                    for req_name, raw_req in zip(sub_request_names, raw_sub_requests):
-                        if re.match(r"\w+\(.*\)$", raw_req) and self.requests[req_name].allow_python_syntax:
-                            name, args, kwargs = parse_python_request(raw_req, req_name)
-                        elif not re.match(r"\w+(.*)$", raw_req):
-                            name, args, kwargs = parse_normal_request(raw_req, req_name)
-                        else:
-                            raise PermissionError("Python syntax is not allowed for this.")
-                        self.execute_request(name, args=args, kwargs=kwargs, client=client)
-                        response = None
-                except Exception:
-                    response = "There was an error."
-                    warnings.warn("Received a request with an invalid syntax.", SyntaxWarning)
-                if response:
-                    client.send(response)
+                    pass
+                for client, username in clients:
+                    try:
+                        msg = client.recv(timeout=0)
+                    except TimeoutError:
+                        continue
+                    response = "No response."
+                    try:
+                        self.current_client = client
+                        self.current_client_username = username
+                        raw_sub_requests = [raw_request.strip() for raw_request in msg.split(";")]
+                        sub_request_names = [re.match(r"\w+", raw_request).group() for raw_request in raw_sub_requests]
+                        for req_name, raw_req in zip(sub_request_names, raw_sub_requests):
+                            if re.match(r"\w+\(.*\)$", raw_req) and self.requests[req_name].allow_python_syntax:
+                                name, args, kwargs = parse_python_request(raw_req, req_name)
+                            elif not re.match(r"\w+(.*)$", raw_req):
+                                name, args, kwargs = parse_normal_request(raw_req, req_name)
+                            else:
+                                raise PermissionError("Python syntax is not allowed for this.")
+                            self.execute_request(name, args=args, kwargs=kwargs, client=client)
+                            response = None
+                    except Exception:
+                        response = "There was an error."
+                        warnings.warn("Received a request with an invalid syntax.", SyntaxWarning)
+                    if response:
+                        client.send(response)
+            except Exception:
+                warnings.warn(f"There was an uncaught error in the request handler: {traceback.format_exc()}", RuntimeWarning)
                 
     
     def execute_request(self, name, *, args : Sequence[Any], kwargs : Mapping[str, Any], client : CloudSocketConnection) -> Union[str, float, int]:
@@ -103,7 +106,7 @@ class RequestHandler(BaseRequestHandler):
                         pass
                     continue
                 kwargs[arg] = annotation.annotation(kwargs[arg])
-            if inspect.signature(request_handling_function).return_annotation:
+            if inspect.signature(request_handling_function).return_annotation != inspect.Signature.empty:
                 return_converter = inspect.signature(request_handling_function).return_annotation
         def respond():
             client.send(str(return_converter(request_handling_function(*args, **kwargs))))
@@ -115,7 +118,7 @@ class RequestHandler(BaseRequestHandler):
     
     def stop(self):
         """
-        Stop the request handler
+        Stop the request handler.
         """
         if self.uses_thread:
             raise NotUsingAThread("Can't stop a request handler that is not using a thread.")
@@ -123,7 +126,10 @@ class RequestHandler(BaseRequestHandler):
         self.cloud_socket.stop()
                     
 
-def parse_python_request(msg, name):
+def parse_python_request(msg : str, name : str):
+    """
+    Parse a request in the format of a python function call.
+    """
     parsed = ast.parse(msg).body[0].value
     assert parsed.func.id == name
     name = parsed.func.id
@@ -131,7 +137,10 @@ def parse_python_request(msg, name):
     kwargs = {kwarg.arg: kwarg.value.value for kwarg in parsed.keywords}
     return name, args, kwargs
 
-def parse_normal_request(msg, name):
+def parse_normal_request(msg : str, name : str):
+    """
+    Parse a request in the normal format.
+    """
     i = iter(msg)
     STR = "str"
     NUM = "num"

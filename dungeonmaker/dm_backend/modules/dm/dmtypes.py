@@ -4,6 +4,7 @@ Types used in the dm library
 from typing import Literal, Any
 from dataclasses import dataclass, field
 import secrets, time
+from . import session as _session
 
 
 
@@ -55,6 +56,7 @@ class BaseRoom:
     content : Any = field(kw_only=True, default=None)
     new : bool = field(kw_only=True, default=False)
     _id : Any = field(kw_only=True, default=None)
+    session : _session.DMSession = field(kw_only=True)
 
 
 
@@ -66,6 +68,7 @@ class BaseDungeon:
     """
     rooms : list[RoomId] = field(kw_only=True, default_factory=list)
     owner : UserId = field(kw_only=True)
+    owner_name : str = field(kw_only=True)
     permitions : dict[UserId, Permitions] = field(kw_only=True)
     views : int = field(kw_only=True, default=0)
     likers : list[UserId] = field(kw_only=True, default_factory=list)
@@ -77,6 +80,7 @@ class BaseDungeon:
     update_time : float = field(kw_only=True, default_factory=time.time)
     _id : Any = field(kw_only=True, default=None)
     score : Any = field(kw_only=True, default=None)
+    session : _session.DMSession = field(kw_only=True)
 
 
 
@@ -97,14 +101,16 @@ class BaseUser:
     """
     Base class for users.
     """
-    user_id : UserId = field(kw_only=True, default_factory=lambda : secrets.randbits(32))
-    owned_dungeons : list[DungeonId] = field(kw_only=True)
-    recent_dungeons : list[DungeonId] = field(kw_only=True)
-    permitted_dungeons : list[DungeonId] = field(kw_only=True)
+    user_id : UserId = field(kw_only=True, default_factory=lambda : str(secrets.randbits(32)))
+    owned_dungeons : list[DungeonId] = field(kw_only=True, default_factory=list)
+    recent_dungeons : list[DungeonId] = field(kw_only=True, default_factory=list)
+    permitted_dungeons : list[DungeonId] = field(kw_only=True, default_factory=list)
     username : str = field(kw_only=True)
-    admin_level : int = field(kw_only=True)
+    admin_level : int = field(kw_only=True, default=0)
     new : bool = field(kw_only=True, default=False)
     _id : Any = field(kw_only=True, default=None)
+    session : _session.DMSession = field(kw_only=True)
+    passdata : bytes = field(kw_only=True)
 
 
 
