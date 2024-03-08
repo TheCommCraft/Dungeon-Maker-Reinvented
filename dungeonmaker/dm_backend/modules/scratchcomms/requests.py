@@ -1,12 +1,12 @@
 """
 Submodule for handling incoming requests.
 """
-import re, warnings, ast
+import re, warnings, ast, inspect
 from func_timeout import StoppableThread
-from typing import Union
+from typing import Union, Mapping, Sequence, Any
 from types import FunctionType
 from scratchcommunication.cloud_socket import CloudSocketConnection
-from .basetypes import BaseRequestHandler
+from .basetypes import BaseRequestHandler, StopRequestHandler, NotUsingAThread
 
 class RequestHandler(BaseRequestHandler):
     """
@@ -49,6 +49,7 @@ class RequestHandler(BaseRequestHandler):
         """
         self.cloud_socket.listen()
         if thread or (thread is None and self.uses_thread):
+            self.uses_thread = True
             self.thread = StoppableThread(target=lambda : self.start(thread=False))
             self.thread.start()
             return
@@ -62,29 +63,61 @@ class RequestHandler(BaseRequestHandler):
                 try:
                     msg = client.recv(timeout=0)
                 except TimeoutError:
-                    pass
-                else:
-                    response = "No response."
-                    try:
-                        self.current_client = client
-                        self.current_client_username = username
-                        raw_sub_requests = [raw_request.strip() for raw_request in msg.split(";")]
-                        sub_request_names = [re.match(r"\w+", raw_request).group() for raw_request in raw_sub_requests]
-                        for req_name, raw_req in zip(sub_request_names, raw_sub_requests):
-                            if re.match(r"\w+\(.*\)$", raw_req) and self.requests[req_name].allow_python_syntax:
-                                name, args, kwargs = parse_python_request(raw_req, req_name)
-                            elif not re.match(r"\w+(.*)$", raw_req):
-                                name, args, kwargs = parse_normal_request(raw_req, req_name)
-                            else:
-                                raise PermissionError("Python syntax is not allowed for this.")
-                            response = self.execute_request(name, args, kwargs)
-                    except Exception:
-                        response = "There was an error."
-                        warnings.warn("Received a request with an invalid syntax.", SyntaxWarning)
-                    client.send(str(response))
+                    continue
+                response = "No response."
+                try:
+                    self.current_client = client
+                    self.current_client_username = username
+                    raw_sub_requests = [raw_request.strip() for raw_request in msg.split(";")]
+                    sub_request_names = [re.match(r"\w+", raw_request).group() for raw_request in raw_sub_requests]
+                    for req_name, raw_req in zip(sub_request_names, raw_sub_requests):
+                        if re.match(r"\w+\(.*\)$", raw_req) and self.requests[req_name].allow_python_syntax:
+                            name, args, kwargs = parse_python_request(raw_req, req_name)
+                        elif not re.match(r"\w+(.*)$", raw_req):
+                            name, args, kwargs = parse_normal_request(raw_req, req_name)
+                        else:
+                            raise PermissionError("Python syntax is not allowed for this.")
+                        self.execute_request(name, args=args, kwargs=kwargs, client=client)
+                        response = None
+                except Exception:
+                    response = "There was an error."
+                    warnings.warn("Received a request with an invalid syntax.", SyntaxWarning)
+                if response:
+                    client.send(response)
+                
     
-    def execute_request(self, name, args, kwargs) -> Union[str, float, int]:
-        return self.requests[name](*args, **kwargs)
+    def execute_request(self, name, *, args : Sequence[Any], kwargs : Mapping[str, Any], client : CloudSocketConnection) -> Union[str, float, int]:
+        """
+        Execute a request.
+        """
+        request_handling_function = self.requests[name]
+        return_converter = lambda x : x
+        if request_handling_function.auto_convert:
+            for idx, (arg, annotation) in enumerate(inspect.signature(request_handling_function).parameters.items()):
+                if inspect.Parameter.empty == annotation.annotation:
+                    continue
+                if not arg in kwargs:
+                    args[idx] = annotation.annotation(args[idx])
+                    continue
+                kwargs[arg] = annotation.annotation(kwargs[arg])
+            if inspect.signature(request_handling_function).return_annotation:
+                return_converter = inspect.signature(request_handling_function).return_annotation
+        def respond():
+            client.send(str(return_converter(request_handling_function(*args, **kwargs))))
+        if request_handling_function.thread:
+            thread = StoppableThread(target=respond)
+            thread.start()
+            return
+        respond()
+    
+    def stop(self):
+        """
+        Stop the request handler
+        """
+        if self.uses_thread:
+            raise NotUsingAThread("Can't stop a request handler that is not using a thread.")
+        self.thread.stop(StopRequestHandler)
+        self.cloud_socket.stop()
                     
 
 def parse_python_request(msg, name):
