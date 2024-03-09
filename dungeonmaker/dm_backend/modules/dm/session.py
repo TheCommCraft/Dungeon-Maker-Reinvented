@@ -2,7 +2,8 @@
 Submodule for database connection.
 """
 import random
-from typing import Literal, Union, assert_never
+from typing import Literal, Union, assert_never, Sequence, Mapping
+
 from dataclasses import dataclass, field
 from .dba import BaseDatabaseAbstraction, DatabaseAbstractionSelector
 from . import dungeon, user, room
@@ -52,6 +53,9 @@ class DMSession:
         return [dungeon.Dungeon(**dungeon_data) for dungeon_data in self.database_abstraction.sorted_dungeons(offset=offset, amount=amount, field="creation_time", aggregation=[])]
 
     def search_for_term(self, term : str, *, amount : int = 10) -> list[dungeon.Dungeon]:
+        """
+        Searches for terms.
+        """
         aggregator = [
             {
                 "$search": {
@@ -86,6 +90,9 @@ class DMSession:
         return [dungeon.Dungeon(**dungeon_data) for dungeon_data in self.database_abstraction.sorted_dungeons(amount=amount, field="score", aggregation=aggregator)]
 
     def find(self, type : Literal["dungeon", "room", "user"], id : Union[DungeonId, RoomId, UserId] = None, *, name : str = None) -> Union[dungeon.Dungeon, room.Room, user.User]:
+        """
+        Finds something.
+        """
         if type == DUNGEON:
             return dungeon.Dungeon.read(dungeon_id=id, session=self)
         if type == ROOM:
@@ -94,7 +101,19 @@ class DMSession:
             return user.User.lookup_user(user_id=id, username=name, session=self)
         assert_never(type)
 
-
+    def create(self, type : Literal["dungeon", "room", "user"], *, args : Sequence = (), kwargs : Mapping = {}):
+        """
+        Creates something.
+        """
+        args = list(args)
+        kwargs = dict(kwargs)
+        if type == DUNGEON:
+            return dungeon.Dungeon(*args, session=self, **kwargs)
+        if type == ROOM:
+            return room.Room(*args, session=self, **kwargs)
+        if type == USER:
+            return user.User(*args, session=self, **kwargs)
+        assert_never(type)
 
 
 
