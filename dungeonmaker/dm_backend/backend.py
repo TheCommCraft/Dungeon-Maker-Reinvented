@@ -1,7 +1,7 @@
 """
 Submodule for the backend
 """
-import pickle, hmac
+import pickle, hmac, json
 from hashlib import sha3_256
 from types import ModuleType
 from typing import Union, Any
@@ -12,7 +12,7 @@ from .modules.scratchcomms import RequestHandler
 from .modules.database import MongoDBDatabaseAbstraction, MongoDBAtlasSession
 from .modules.dm.session import DMSession
 from .modules.dm.selectors import DUNGEON, ROOM, USER
-from .modules.dm.user import User
+from .modules.dm.user import User, s_vars
 
 @dataclass(slots=True)
 class DMBackend:
@@ -69,6 +69,12 @@ class DMBackend:
             self.current_client_data["user_id"] = user.user_id
             user.write()
             return "Success!"
+        
+        @self.request_handler.request(name="load_profile", allow_python_syntax=True, auto_convert=True)
+        def load_profile() -> str:
+            if not self.current_client_data["logged_in"]:
+                return "You are not logged in."
+            return json.dumps(s_vars(self.find_current_client_user()))
                 
         
         
