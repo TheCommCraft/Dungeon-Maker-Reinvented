@@ -1,7 +1,7 @@
 """
 Types used in the dm library
 """
-from typing import Literal, Any
+from typing import Literal, Any, Union
 from dataclasses import dataclass, field
 import secrets, time
 from . import session as _session
@@ -111,6 +111,7 @@ class BaseUser:
     _id : Any = field(kw_only=True, default=None)
     session : _session.DMSession = field(kw_only=True)
     passdata : bytes = field(kw_only=True)
+    linked_user : Union[str, None] = field(kw_only=True, default=None)
 
 
 
