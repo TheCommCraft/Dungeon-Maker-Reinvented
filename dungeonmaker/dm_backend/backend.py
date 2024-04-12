@@ -8,8 +8,8 @@ from typing import Union, Any
 from dataclasses import dataclass, field
 from scratchcommunication.cloud_socket import CloudSocket
 from scratchcommunication.cloud import CloudConnection
+from scratchcommunication.cloudrequests import RequestHandler
 from scratchattach import get_project, Project
-from .modules.scratchcomms import RequestHandler
 from .modules.database import MongoDBDatabaseAbstraction, MongoDBAtlasSession
 from .modules.dm.session import DMSession
 from .modules.dm.selectors import DUNGEON, ROOM, USER
@@ -75,78 +75,82 @@ class DMBackend:
             self.current_client_data["username"] = username
             linked_user = linked_user.lower()
             if linked_user:
-                try:
-                    has_linked = self.dm_session.database_abstraction.select_user(fields={"linked_user": linked_user})
-                except KeyError:
-                    pass
-                else:
+                has_linked = user_has_linked(session=self.dm_session, user=linked_user)
+                if has_linked:
                     return f"You already have an account linked: {has_linked['username']}"
                 project = self.project
-                comments = project.comments()
-                for comment in comments:
-                    if comment["author"]["username"] != linked_user:
-                        continue
-                    if comment["content"] != f"My account: {username}":
-                        continue
-                    break
-                else:
-                    return f"Couldn't link your new account to your scratch username. Try commenting \"My account: {username}\" on the project again."
+                user = linked_user
+                comment = f"My account: {username}"
+                if not find_comment(project, content=comment, user=user):
+                    return f"Couldn't link your new account to your scratch username. Try commenting \"{comment}\" on the project again."
             else:
                 project = self.project
-                comments = project.comments()
-                for comment in comments:
-                    if comment["content"] != f"My account: {username}":
-                        continue
-                    break
-                else:
-                    return "Couldn't verify your username."
+                comment = f"My account: {username}"
+                if not find_comment(project=project, content=comment):
+                    return f"Couldn't verify your username. Try commenting \"{comment}\" on the project again."
             user = self.dm_session.create(USER, kwargs={"username": username, "passdata": passdata, "linked_user": linked_user})
             self.current_client_data["user_id"] = user.user_id
             user.write()
             return "Success!"
         
         @self.request_handler.request(name="load_private_profile", allow_python_syntax=True, auto_convert=True)
-        def load_private_profile() -> str:
+        def load_private_profile() -> json.dumps:
             if not self.current_client_data["logged_in"]:
-                return "You are not logged in."
-            return json.dumps(s_vars(self.find_current_client_user()))
+                return {"success": False, "result": None, "reason": "You are not logged in."}
+            user_data = s_vars(self.find_current_client_user())
+            user_data = include_data(user_data, include=
+                [
+                    "username", 
+                    "user_id",
+                    "admin_level",
+                    "linked_user",
+                    "recent_dungeons",
+                    "owned_dungeons",
+                    "permitted_dungeons",
+                    "passdata"
+                ]
+            )
+            user_data["passdata"] = "maybe not"
+            return {"success": True, "result": user_data, "reason": "success"}
                 
         @self.request_handler.request(name="load_profile", allow_python_syntax=True, auto_convert=True)
-        def load_profile(username : str = None, *, user_id : str = None) -> str:
+        def load_profile(username : str = None, *, user_id : str = None) -> json.dumps:
             try:
                 user = self.dm_session.find(USER, id=user_id, name=username)
             except KeyError:
-                return "That profile doesn't seem to exist."
+                return {"success": False, "result": None, "reason": "That profile doesn't seem to exist."}
             user_data = s_vars(user)
-            user_data.pop("passdata")
-            return json.dumps(user_data)
+            user_data = include_data(user_data, include=
+                [
+                    "username", 
+                    "user_id",
+                    "admin_level",
+                    "linked_user",
+                    "recent_dungeons",
+                    "owned_dungeons",
+                    "permitted_dungeons"
+                ]
+            )
+            return {"success": True, "result": user_data, "reason": "success"}
         
         @self.request_handler.request(name="link_user", allow_python_syntax=True, auto_convert=True)
         def link_user(linked_user : str, password : str) -> str:
             if not self.current_client_data["logged_in"]:
                 return "You are not logged in."
             linked_user = linked_user.lower()
-            try:
-                has_linked = self.dm_session.database_abstraction.select_user(fields={"linked_user": linked_user})
-            except KeyError:
-                pass
-            else:
+            has_linked = user_has_linked(session=self.dm_session, user=linked_user)
+            if has_linked:
                 return f"You already have an account linked: {has_linked['username']}"
             user = self.find_current_client_user()
             passdata = gen_passdata(username=self.current_client_data["username"], password=password)
             if passdata != user.passdata:
                 return "Wrong password."
             project = self.project
-            comments = project.comments()
             username = self.current_client_data["username"]
-            for comment in comments:
-                if comment["author"]["username"] != linked_user:
-                    continue
-                if comment["content"] != f"My account: {username}":
-                    continue
-                break
-            else:
-                return f"Couldn't link your new account to your scratch username. Try commenting \"My account: {username}\" on the project again."
+            comment = f"My account: {username}"
+            user = linked_user
+            if not find_comment(project=project, user=user):
+                return f"Couldn't link your new account to your scratch username. Try commenting \"{comment}\" on the project again."
             user.linked_user = linked_user
             user.write()
             return "Success!"
@@ -159,13 +163,12 @@ class DMBackend:
             passdata = gen_passdata(username=self.current_client_data["username"], password=password)
             if passdata != user.passdata:
                 return "Wrong password."
-            project = self.project
             user.linked_user = None
             user.write()
             return "Success!"
         
         @self.request_handler.request(name="reset_password", allow_python_syntax=True, auto_convert=True)
-        def reset_password(username : str, password : str = None, linked_user : str = None, code : int = None):
+        def reset_password(username : str, password : str = None, linked_user : str = None, code : int = None) -> str:
             if code is None:
                 code = secrets.randbits(24)
                 self.current_client_data["password_reset_code"] = code
@@ -178,15 +181,10 @@ class DMBackend:
                     return "You do not have a user linked, so you cannot reset your password like this. Try commenting on the project for help."
                 return "That is not your linked user."
             project = self.project
-            comments = project.comments()
-            for comment in comments:
-                if comment["author"]["username"] != linked_user:
-                    continue
-                if comment["content"] != f"Password reset code: {code}":
-                    continue
-                break
-            else:
-                return f"Couldn't verify your password reset request. Try commenting \"Password reset code: {code}\" on the project again."
+            comment = f"Password reset code: {code}"
+            user = linked_user
+            if not find_comment(project, content=comment, user=user):
+                return f"Couldn't verify your password reset request. Try commenting \"{comment}\" on the project again."
             passdata = gen_passdata(username=username, password=password)
             user.passdata = passdata
             user.write()
@@ -195,6 +193,9 @@ class DMBackend:
         self.request_handler.start(thread=thread)
         
     def stop(self):
+        """
+        Stop the dungeon maker backend.
+        """
         self.request_handler.stop()
         
     @property
@@ -223,15 +224,44 @@ class DMBackend:
 
 
 def gen_passdata(*, username : str, password : str) -> bytes:
+    """
+    Generate passdata for an account
+    """
     passdata = sha3_256(pickle.dumps((username, password, "Dungeon Maker: Reinvented - Login System Salt"))).digest()
     return passdata
 
+def find_comment(project : Project, *, content : str = None, user : str = None) -> bool:
+    """
+    Find a comment.
+    """
+    comments = project.comments()
+    for comment in comments:
+        if user and comment["author"]["username"] != user:
+            continue
+        if content and comment["content"] != content:
+            continue
+        return True
+    return False
 
+def user_has_linked(*, session : DMSession, user : str) -> Union[None, dict]:
+    """
+    Find out if a user has linked an account to his name.
+    """
+    try:
+        has_linked = session.database_abstraction.select_user(fields={"linked_user": user})
+    except KeyError:
+        return None
+    else:
+        return has_linked
 
-
-
-
-
+def include_data(data : dict, *, include : list[str] = ()) -> dict:
+    """
+    Remove all elements from a dict except those specified
+    """
+    new = {}
+    for i in include:
+        new[i] = data.get(i)
+    return new
 
 
 
