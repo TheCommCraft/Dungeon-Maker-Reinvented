@@ -39,9 +39,17 @@ class Permitions(list[Permition]):
     Class for containing a list of permitions.
     """
     def get(self, __type : Any) -> Permition:
-        return ([i for i in self if i.type == __type] + [Permition(type=__type, value=None)])[0]
+        try:
+            return ([i for i in self if i.type == __type] + [Permition(type=__type, value=None)])[0]
+        except IndexError:
+            pass
 
 
+
+class Stats(dict):
+    """
+    Class for statistics.
+    """
 
 
 
@@ -54,7 +62,7 @@ class BaseRoom:
     room_id : RoomId = field(kw_only=True, default_factory=lambda : secrets.randbits(32))
     dungeon_id : DungeonId = field(kw_only=True)
     content : Any = field(kw_only=True, default=None)
-    new : bool = field(kw_only=True, default=False)
+    new : bool = field(kw_only=True, default=True)
     _id : Any = field(kw_only=True, default=None)
     session : _session.DMSession = field(kw_only=True)
 
@@ -69,7 +77,7 @@ class BaseDungeon:
     rooms : list[RoomId] = field(kw_only=True, default_factory=list)
     owner : UserId = field(kw_only=True)
     owner_name : str = field(kw_only=True)
-    permitions : dict[UserId, Permitions] = field(kw_only=True)
+    permitions : dict[UserId, Permitions] = field(kw_only=True, default_factory=dict)
     views : int = field(kw_only=True, default=0)
     likers : list[UserId] = field(kw_only=True, default_factory=list)
     new : bool = field(kw_only=True, default=True)
@@ -81,6 +89,8 @@ class BaseDungeon:
     _id : Any = field(kw_only=True, default=None)
     score : Any = field(kw_only=True, default=None)
     session : _session.DMSession = field(kw_only=True)
+    stats : Stats = field(kw_only=True, default_factory=Stats)
+    start : tuple = field(kw_only=True)
 
 
 
@@ -92,7 +102,7 @@ class BaseDungeonUser:
     """
     user_id : UserId = field(kw_only=True)
     dungeon : BaseDungeon = field(kw_only=True)
-    permitions : list[Permition] = field(kw_only=True)
+    permitions : Permitions = field(kw_only=True)
     owner : bool = field(kw_only=True)
 
 
@@ -107,11 +117,12 @@ class BaseUser:
     permitted_dungeons : list[DungeonId] = field(kw_only=True, default_factory=list)
     username : str = field(kw_only=True)
     admin_level : int = field(kw_only=True, default=0)
-    new : bool = field(kw_only=True, default=False)
+    new : bool = field(kw_only=True, default=True)
     _id : Any = field(kw_only=True, default=None)
     session : _session.DMSession = field(kw_only=True)
     passdata : bytes = field(kw_only=True)
     linked_user : Union[str, None] = field(kw_only=True, default=None)
+    stats : Stats = field(kw_only=True, default_factory=Stats)
 
 
 

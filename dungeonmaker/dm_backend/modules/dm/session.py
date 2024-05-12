@@ -101,7 +101,7 @@ class DMSession:
             return user.User.lookup_user(user_id=id, username=name, session=self)
         assert_never(type)
 
-    def create(self, type : Literal["dungeon", "room", "user"], *, args : Sequence = (), kwargs : Mapping = {}):
+    def create(self, type : Literal["dungeon", "room", "user"], *, args : Sequence = (), kwargs : Mapping = {}) -> Union[dungeon.Dungeon, room.Room, user.User]:
         """
         Creates something.
         """

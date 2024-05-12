@@ -1,13 +1,14 @@
 """
 Submodule for dungeons.
 """
-import time, copy
+import time, copy, secrets
 from typing import Self
 from .dmtypes import (
     DungeonId, 
     BaseDungeon, 
     BaseRoom, 
     UserId, 
+    RoomId, 
     Permition, 
     BaseDungeonUser, 
     Permitions
@@ -17,13 +18,14 @@ from .user import User
 from . import room
 from . import session as _session
 from .utils import s_vars
+from .selectors import ROOM
 
 class Dungeon(BaseDungeon):
     """
     Class for dungeons.
     """
     def __init__(self, *args, **kwargs):
-        kwargs["permitions"] = kwargs.get("permitions", {})
+        kwargs.setdefault("permitions", {})
         kwargs["permitions"][kwargs["owner"]] = Permitions([
             Permition(type="read", value=True),
             Permition(type="edit_rooms", value=True),
@@ -81,16 +83,41 @@ class Dungeon(BaseDungeon):
             return
         self.session.database_abstraction.update_dungeon(dungeon_id=self.dungeon_id, updator={"$set": data})
         
-    def new_room(self, content : str = None) -> Room:
+    def new_room(self, *, content : str = None, room_id : RoomId = None) -> Room:
         """
         Method for creating a new room.
         """
-        new_room = Room(content=content, dungeon_id=self.dungeon_id, new=True, session=self.session)
+        new_room = self.session.create(ROOM, kwargs={"content": content, "dungeon_id": self.dungeon_id, "room_id": room_id or secrets.randbits(32)})
         self.rooms.append(new_room.room_id)
         return new_room
     
     def log_update(self):
+        """
+        Log an update.
+        """
         self.update_time = time.time()
+        
+    def like(self, user : User):
+        """
+        Register a like.
+        """
+        if user.user_id in self.likers:
+            return
+        self.likers.append(user.user_id)
+        
+    def unlike(self, user : User):
+        """
+        Register an unlike.
+        """
+        if not user.user_id in self.likers:
+            return
+        self.likers.remove(user.user_id)
+        
+    def view(self):
+        """
+        Register a view.
+        """
+        self.views += 1
 
 class DungeonUser(BaseDungeonUser):
     """
