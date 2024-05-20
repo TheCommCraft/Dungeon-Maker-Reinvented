@@ -5,9 +5,9 @@ import random
 from typing import Literal, Union, assert_never, Sequence, Mapping
 
 from dataclasses import dataclass, field
-from .dba import BaseDatabaseAbstraction, DatabaseAbstractionSelector
 from . import dungeon, user, room
-from .dmtypes import DungeonId, RoomId, UserId
+from . import dba as _dba
+from .dmtypes import DungeonId, RoomId, UserId, BaseDatabaseAbstraction
 from .selectors import DUNGEON, ROOM, USER
 
 @dataclass
@@ -15,7 +15,7 @@ class DMSession:
 
     def __init__(self, *, database_abstractions : list = None):
         self.database_abstractions = list(database_abstractions or ())
-        self.database_abstraction = DatabaseAbstractionSelector(self.database_abstractions)
+        self.database_abstraction = _dba.DatabaseAbstractionSelector(self.database_abstractions)
 
     def add_database_abstraction(self, dba : BaseDatabaseAbstraction):
         """

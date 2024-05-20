@@ -4,11 +4,11 @@ Submodule for Database Abstractions.
 from typing import Literal
 from dataclasses import dataclass, field
 from .basetypes import BaseMongoDBAtlasSession
-from ..dm.dba import BaseDatabaseAbstraction
+from ..dm.dba import dba.BaseDatabaseAbstraction
 from ..dm.dmtypes import UserId, DungeonId, RoomId
 
 @dataclass(slots=True)
-class MongoDBDatabaseAbstraction(BaseDatabaseAbstraction):
+class MongoDBDatabaseAbstraction(dba.BaseDatabaseAbstraction):
     """
     Class for MongoDB database abstractions.
     """

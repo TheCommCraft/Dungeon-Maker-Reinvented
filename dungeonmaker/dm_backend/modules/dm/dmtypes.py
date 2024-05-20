@@ -4,7 +4,6 @@ Types used in the dm library
 from typing import Literal, Any, Union
 from dataclasses import dataclass, field
 import secrets, time
-from . import session as _session
 
 
 
@@ -144,7 +143,7 @@ class BaseRoom:
     content : Any = field(kw_only=True, default=None)
     new : bool = field(kw_only=True, default=True)
     _id : Any = field(kw_only=True, default=None)
-    session : _session.DMSession = field(kw_only=True)
+    session : BaseDMSession = field(kw_only=True)
 
 
 
@@ -168,7 +167,7 @@ class BaseDungeon:
     update_time : float = field(kw_only=True, default_factory=time.time)
     _id : Any = field(kw_only=True, default=None)
     score : Any = field(kw_only=True, default=None)
-    session : _session.DMSession = field(kw_only=True)
+    session : BaseDMSession = field(kw_only=True)
     stats : Stats = field(kw_only=True, default_factory=Stats)
     start : tuple = field(kw_only=True)
 
@@ -199,11 +198,10 @@ class BaseUser:
     admin_level : int = field(kw_only=True, default=0)
     new : bool = field(kw_only=True, default=True)
     _id : Any = field(kw_only=True, default=None)
-    session : _session.DMSession = field(kw_only=True)
+    session : BaseDMSession = field(kw_only=True)
     passdata : bytes = field(kw_only=True)
     linked_user : Union[str, None] = field(kw_only=True, default=None)
     stats : Stats = field(kw_only=True, default_factory=Stats)
-
 
 
 
