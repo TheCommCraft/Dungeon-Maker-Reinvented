@@ -1,17 +1,17 @@
 """
 Submodule for database abstractions.
 """
-from .dmtypes import UserId, DungeonId, RoomId, dba.BaseDatabaseAbstraction
+from .dmtypes import UserId, DungeonId, RoomId, BaseDatabaseAbstraction
 
 
     
-class DatabaseAbstractionSelector(dba.BaseDatabaseAbstraction):
+class DatabaseAbstractionSelector(BaseDatabaseAbstraction):
     """
     Class for selecting a database abstraction.
     """
-    dbas : list[dba.BaseDatabaseAbstraction]
+    dbas : list[BaseDatabaseAbstraction]
     
-    def __init__(self, dbas : list[dba.BaseDatabaseAbstraction]):
+    def __init__(self, dbas : list[BaseDatabaseAbstraction]):
         self.dbas = dbas
         
     def select_user(self, user_id : UserId = None, *, fields : dict = None) -> dict:
