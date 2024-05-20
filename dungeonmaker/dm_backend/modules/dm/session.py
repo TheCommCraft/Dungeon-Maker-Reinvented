@@ -12,10 +12,8 @@ from .selectors import DUNGEON, ROOM, USER
 
 @dataclass
 class DMSession:
-    database_abstractions : list[BaseDatabaseAbstraction] = field(default_factory=list, kw_only=True)
-    database_abstraction : DatabaseAbstractionSelector = field(init=False)
 
-    def __init__(self, database_abstractions : list = None):
+    def __init__(self, *, database_abstractions : list = None):
         self.database_abstractions = list(database_abstractions or ())
         self.database_abstraction = DatabaseAbstractionSelector(self.database_abstractions)
 

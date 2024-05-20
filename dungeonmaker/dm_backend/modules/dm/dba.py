@@ -1,85 +1,9 @@
 """
 Submodule for database abstractions.
 """
-from .dmtypes import UserId, DungeonId, RoomId
+from .dmtypes import UserId, DungeonId, RoomId, BaseDatabaseAbstraction
 
 
-class BaseDatabaseAbstraction:
-    """
-    Base class for database abstractions.
-    """
-    def select_user(self, user_id : UserId = None, *, fields : dict = None) -> dict:
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def select_dungeon(self, dungeon_id : DungeonId = None, *, fields : dict = None) -> dict:
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def select_room(self, room_id : RoomId = None, *, fields : dict = None) -> dict:
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def update_user(self, user_id : UserId = None, *, fields : dict = None, updator : dict = None):
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def update_dungeon(self, dungeon_id : DungeonId = None, *, fields : dict = None, updator : dict = None):
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def update_room(self, room_id : RoomId = None, *, fields : dict = None, updator : dict = None):
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def insert_user(self, *, data : dict = None):
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def insert_dungeon(self, *, data : dict = None):
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def insert_room(self, *, data : dict = None):
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def random_dungeons(self, *, amount : int = 1) -> list[dict]:
-        """
-        Do not use.
-        """
-        raise NotImplementedError
-    
-    def sorted_dungeons(
-        self, 
-        *, 
-        amount : int = 20, 
-        offset : int = 0,
-        field : str = "score", 
-        aggregation : list[dict] = [{"$addFields":{"score": {"$add": [{"$multiply": [20,{"$size": "$likers"},]},"$views"]}}}]
-    ) -> list[dict]:
-        """
-        Do not use.
-        """
-        raise NotImplementedError
     
 class DatabaseAbstractionSelector(BaseDatabaseAbstraction):
     """
