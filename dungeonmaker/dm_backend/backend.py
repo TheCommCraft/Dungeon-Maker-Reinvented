@@ -270,8 +270,8 @@ class DMBackend:
             room = self.dm_session.find(ROOM, room_id)
             return room.content
         
-        @self.request_handler.request(name="like_dungeon")
-        def like_dungeon(dungeon_id : DungeonId):
+        @self.request_handler.request(name="like_dungeon", allow_python_syntax=True, auto_convert=True)
+        def like_dungeon(dungeon_id : DungeonId) -> str:
             dungeon : Dungeon
             user : User
             self.ensure_login()
@@ -280,8 +280,8 @@ class DMBackend:
             dungeon.like(user)
             return "Success!"
         
-        @self.request_handler.request(name="unlike_dungeon")
-        def unlike_dungeon(dungeon_id : DungeonId):
+        @self.request_handler.request(name="unlike_dungeon", allow_python_syntax=True, auto_convert=True)
+        def unlike_dungeon(dungeon_id : DungeonId) -> str:
             dungeon : Dungeon
             user : User
             self.ensure_login()
@@ -289,6 +289,17 @@ class DMBackend:
             user = self.find_current_client_user()
             dungeon.unlike(user)
             return "Success!"
+        
+        @self.request_handler.request(name="load_tab", allow_python_syntax=True, auto_convert=True)
+        def load_tab(tab : str) -> json.dumps:
+            if tab == "popular":
+                data = self.dm_session.get_popular_tab()
+            elif tab == "random":
+                data = self.dm_session.get_default_tab()
+            elif tab == "new":
+                data = self.dm_session.get_newest_tab()
+            data = [dungeon.to_object() for dungeon in data]
+            return data
         
         self.request_handler.start(thread=thread, duration=duration)
         

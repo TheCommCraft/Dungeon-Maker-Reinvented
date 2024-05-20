@@ -97,29 +97,29 @@ class BaseDMSession:
 
 
 @dataclass(slots=True)
-class Permition:
+class Permission:
     """
-    Class for permitions.
+    Class for permissions.
     """
     type: Literal[
         "read", 
         "edit_rooms", 
         "edit_room", 
-        "edit_permitions", 
+        "edit_permissions", 
         "edit_infos", 
-        "permition_level"
+        "permission_level"
         ] = field(kw_only=True)
     value: Any = field(kw_only=True)
 
 
 
-class Permitions(list[Permition]):
+class Permissions(list[Permission]):
     """
-    Class for containing a list of permitions.
+    Class for containing a list of permissions.
     """
-    def get(self, __type : Any) -> Permition:
+    def get(self, __type : Any) -> Permission:
         try:
-            return ([i for i in self if i.type == __type] + [Permition(type=__type, value=None)])[0]
+            return ([i for i in self if i.type == __type] + [Permission(type=__type, value=None)])[0]
         except IndexError:
             pass
 
@@ -156,7 +156,7 @@ class BaseDungeon:
     rooms : list[RoomId] = field(kw_only=True, default_factory=list)
     owner : UserId = field(kw_only=True)
     owner_name : str = field(kw_only=True)
-    permitions : dict[UserId, Permitions] = field(kw_only=True, default_factory=dict)
+    permissions : dict[UserId, Permissions] = field(kw_only=True, default_factory=dict)
     views : int = field(kw_only=True, default=0)
     likers : list[UserId] = field(kw_only=True, default_factory=list)
     new : bool = field(kw_only=True, default=True)
@@ -181,7 +181,7 @@ class BaseDungeonUser:
     """
     user_id : UserId = field(kw_only=True)
     dungeon : BaseDungeon = field(kw_only=True)
-    permitions : Permitions = field(kw_only=True)
+    permissions : Permissions = field(kw_only=True)
     owner : bool = field(kw_only=True)
 
 

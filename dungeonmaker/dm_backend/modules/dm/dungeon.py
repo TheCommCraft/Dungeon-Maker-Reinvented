@@ -9,9 +9,9 @@ from .dmtypes import (
     BaseRoom, 
     UserId, 
     RoomId, 
-    Permition, 
+    Permission, 
     BaseDungeonUser, 
-    Permitions
+    Permissions
 )
 from .room import Room
 from .user import User
@@ -25,13 +25,13 @@ class Dungeon(BaseDungeon):
     Class for dungeons.
     """
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("permitions", {})
-        kwargs["permitions"][kwargs["owner"]] = Permitions([
-            Permition(type="read", value=True),
-            Permition(type="edit_rooms", value=True),
-            Permition(type="edit_infos", value=True),
-            Permition(type="edit_permitions", value=True),
-            Permition(type="permition_level", value=999),
+        kwargs.setdefault("permissions", {})
+        kwargs["permissions"][kwargs["owner"]] = Permissions([
+            Permission(type="read", value=True),
+            Permission(type="edit_rooms", value=True),
+            Permission(type="edit_infos", value=True),
+            Permission(type="edit_permissions", value=True),
+            Permission(type="permission_level", value=999),
         ])
         kwargs["owner_name"] = User.read(kwargs["owner"], session=kwargs["session"]).username
         super().__init__(*args, **kwargs)
@@ -54,10 +54,10 @@ class Dungeon(BaseDungeon):
         Get a user of the dungeon.
         """
         user_id = user_id or User.lookup_user(username=username, session=self.session).user_id
-        permitions = self.permitions.get(user_id, Permitions([Permition(type="read", value=True)]))
+        permissions = self.permissions.get(user_id, Permissions([Permission(type="read", value=True)]))
         owner = self.owner == user_id
-        d_user = DungeonUser(user_id=user_id, permitions=permitions, owner=owner, dungeon=self)
-        self.permitions[user_id] = d_user
+        d_user = DungeonUser(user_id=user_id, permissions=permissions, owner=owner, dungeon=self)
+        self.permissions[user_id] = d_user
         return d_user
         
     
@@ -75,7 +75,7 @@ class Dungeon(BaseDungeon):
         """
         data = copy.deepcopy(s_vars(self))
         data["new"] = False
-        for _, perms in (data["permitions"]).items():
+        for _, perms in (data["permissions"]).items():
             perms[:] = [{"type": perm.type, "value": perm.value} for perm in perms]
         if self.new:
             self.new = False
@@ -118,6 +118,24 @@ class Dungeon(BaseDungeon):
         Register a view.
         """
         self.views += 1
+        
+    def to_object(self) -> dict:
+        """
+        Convert to an object.
+        """
+        data = copy.deepcopy(s_vars(self))
+        data.pop("rooms")
+        data.pop("permissions")
+        data.pop("new")
+        data.pop("creation_time")
+        data.pop("update_time")
+        data.pop("score")
+        data.pop("stats")
+        data.pop("start")
+        data.pop("likers")
+        data["likes"] = self.likes
+        return data
+        
 
 class DungeonUser(BaseDungeonUser):
     """
