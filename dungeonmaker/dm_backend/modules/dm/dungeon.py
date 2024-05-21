@@ -1,6 +1,7 @@
 """
 Submodule for dungeons.
 """
+from __future__ import annotations
 import time, copy, secrets
 from typing import Self
 from .dmtypes import (

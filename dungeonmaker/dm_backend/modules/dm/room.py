@@ -1,6 +1,7 @@
 """
 Submodule for dungeons.
 """
+from __future__ import annotations
 from typing import Self
 from .dmtypes import RoomId, BaseDungeon, BaseRoom
 from . import dungeon

@@ -1,7 +1,8 @@
 """
 Types used in the dm library
 """
-from typing import Literal, Any, Union
+from __future__ import annotations
+from typing import Literal, Any, Union, Sequence, Mapping
 from dataclasses import dataclass, field
 import secrets, time
 
@@ -90,10 +91,8 @@ class BaseDatabaseAbstraction:
         """
         raise NotImplementedError
 
-@dataclass
-class BaseDMSession:
-    database_abstractions : list[BaseDatabaseAbstraction] = field(default_factory=list, kw_only=True)
-    database_abstraction : BaseDatabaseAbstraction = field(init=False)
+
+
 
 
 @dataclass(slots=True)
@@ -148,29 +147,6 @@ class BaseRoom:
 
 
 
-@dataclass(slots=True)
-class BaseDungeon:
-    """
-    Base class for dungeons.
-    """
-    rooms : list[RoomId] = field(kw_only=True, default_factory=list)
-    owner : UserId = field(kw_only=True)
-    owner_name : str = field(kw_only=True)
-    permissions : dict[UserId, Permissions] = field(kw_only=True, default_factory=dict)
-    views : int = field(kw_only=True, default=0)
-    likers : list[UserId] = field(kw_only=True, default_factory=list)
-    new : bool = field(kw_only=True, default=True)
-    dungeon_id : DungeonId = field(kw_only=True, default_factory=lambda : secrets.randbits(32))
-    name : str = field(kw_only=True)
-    description : str = field(kw_only=True)
-    creation_time : float = field(kw_only=True, default_factory=time.time)
-    update_time : float = field(kw_only=True, default_factory=time.time)
-    _id : Any = field(kw_only=True, default=None)
-    score : Any = field(kw_only=True, default=None)
-    session : BaseDMSession = field(kw_only=True)
-    stats : Stats = field(kw_only=True, default_factory=Stats)
-    start : tuple = field(kw_only=True)
-
 
 
 
@@ -205,8 +181,84 @@ class BaseUser:
 
 
 
+@dataclass(slots=True)
+class BaseDungeon:
+    """
+    Base class for dungeons.
+    """
+    rooms : list[RoomId] = field(kw_only=True, default_factory=list)
+    owner : UserId = field(kw_only=True)
+    owner_name : str = field(kw_only=True)
+    permissions : dict[UserId, Permissions] = field(kw_only=True, default_factory=dict)
+    views : int = field(kw_only=True, default=0)
+    likers : list[UserId] = field(kw_only=True, default_factory=list)
+    new : bool = field(kw_only=True, default=True)
+    dungeon_id : DungeonId = field(kw_only=True, default_factory=lambda : secrets.randbits(32))
+    name : str = field(kw_only=True)
+    description : str = field(kw_only=True)
+    creation_time : float = field(kw_only=True, default_factory=time.time)
+    update_time : float = field(kw_only=True, default_factory=time.time)
+    _id : Any = field(kw_only=True, default=None)
+    score : Any = field(kw_only=True, default=None)
+    session : BaseDMSession = field(kw_only=True)
+    stats : Stats = field(kw_only=True, default_factory=Stats)
+    start : tuple = field(kw_only=True)
 
 
+
+@dataclass
+class BaseDMSession:
+    database_abstractions : list[BaseDatabaseAbstraction] = field(default_factory=list, kw_only=True)
+    database_abstraction : BaseDatabaseAbstraction = field(init=False)
+    
+    def add_database_abstraction(self, dba : BaseDatabaseAbstraction):
+        """
+        Add a database abstraction.
+        """
+        raise NotImplementedError
+
+
+    def get_popular_tab(self, *, offset : int = 0, amount : int = 20) -> list[BaseDungeon]:
+        """
+        Get a default of 20 dungeons with no offset from the most popular dungeons.
+        """
+        raise NotImplementedError
+
+    def get_random_tab(self, *, offset : int = 0, amount : int = 20) -> list[BaseDungeon]:
+        """
+        Get a default of 20 dungeons of random dungeons. 
+        """
+        raise NotImplementedError
+
+    def get_default_tab(self, *, offset : int = 0, amount : int = 20) -> list[BaseDungeon]:
+        """
+        Get a default of 20 dungeons of random dungeons. 
+        """
+        raise NotImplementedError
+
+    def get_newest_tab(self, *, offset : int = 0, amount : int = 20) -> list[BaseDungeon]:
+        """
+        Get a default of 20 dungeons of the newest dungeons. 
+        """
+        raise NotImplementedError
+
+    def search_for_term(self, term : str, *, amount : int = 10) -> list[BaseDungeon]:
+        """
+        Searches for terms.
+        """
+        raise NotImplementedError
+
+    def find(self, type : Literal["dungeon", "room", "user"], id : Union[DungeonId, RoomId, UserId] = None, *, name : str = None) -> Union[BaseDungeon, BaseRoom, BaseUser]:
+        """
+        Finds something.
+        """
+        raise NotImplementedError
+
+    def create(self, type : Literal["dungeon", "room", "user"], *, args : Sequence = (), kwargs : Mapping = {}) -> Union[BaseDungeon, BaseRoom, BaseUser]:
+        """
+        Creates something.
+        """
+        raise NotImplementedError
 
 
 

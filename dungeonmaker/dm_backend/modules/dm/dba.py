@@ -1,6 +1,7 @@
 """
 Submodule for database abstractions.
 """
+from __future__ import annotations
 from .dmtypes import UserId, DungeonId, RoomId, BaseDatabaseAbstraction
 
 

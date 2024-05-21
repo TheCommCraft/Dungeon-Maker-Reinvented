@@ -1,9 +1,9 @@
 """
 Submodule for handling users.
 """
+from __future__ import annotations
 from typing import Self
-from .dmtypes import BaseUser, UserId
-from . import session as _session
+from .dmtypes import BaseUser, UserId, BaseDMSession
 from .utils import s_vars
 
 
@@ -13,14 +13,14 @@ class User(BaseUser):
     Class for handling users.
     """
     @classmethod
-    def lookup_user(cls, *, username : str = None, user_id : UserId = None, session : _session.DMSession) -> Self:
+    def lookup_user(cls, *, username : str = None, user_id : UserId = None, session : BaseDMSession) -> Self:
         """
         Find a user based on its username or user id.
         """
         return cls(**session.database_abstraction.select_user(user_id=user_id, fields={"username": username} if username else {}))
     
     @classmethod
-    def read(cls, user_id : UserId, *, session : _session.DMSession) -> Self:
+    def read(cls, user_id : UserId, *, session : BaseDMSession) -> Self:
         """
         Read a user based on its user_id.
         """

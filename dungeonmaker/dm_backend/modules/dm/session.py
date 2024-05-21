@@ -1,9 +1,9 @@
 """
 Submodule for database connection.
 """
+from __future__ import annotations
 import random
 from typing import Literal, Union, assert_never, Sequence, Mapping
-
 from dataclasses import dataclass, field
 from . import dungeon, user, room
 from . import dba as _dba
