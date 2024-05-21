@@ -229,7 +229,8 @@ class DMBackend:
             dungeon.write()
             
         @self.request_handler.request(name="save_dungeon_infos", allow_python_syntax=True, auto_convert=True)
-        def save_dungeon_infos(dungeon_id)
+        def save_dungeon_infos(dungeon_id : DungeonId) -> str:
+            pass
         
         @self.request_handler.request(name="save_room", allow_python_syntax=True, auto_convert=True)
         def save_room(room_id : RoomId, content : str, bound_dungeon : DungeonId) -> str:
