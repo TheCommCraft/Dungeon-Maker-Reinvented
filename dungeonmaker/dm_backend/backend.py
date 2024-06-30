@@ -124,7 +124,7 @@ class DMBackend:
         def load_profile(username : str = None, *, user_id : str = None) -> json.dumps:
             user : User
             try:
-                user = self.dm_session.find(USER, id=user_id, name=username)
+                user = self.dm_session.find(USER, __id=user_id, name=username)
             except KeyError:
                 raise ErrorMessage(json.dumps({"success": False, "result": None, "reason": "That profile doesn't seem to exist."}))
             user_data = s_vars(user)
@@ -181,13 +181,13 @@ class DMBackend:
             if code is None:
                 code = secrets.randbits(24)
                 self.current_client_data["password_reset_code"] = code
-                return f"Your password reset code is \"{code}\". Try commenting \"Password reset code: {code}\" using your linked account."
+                return f"Your password reset code is \"{code}\". Comment \"Password reset code: {code}\" using your linked account."
             if code != self.current_client_data["password_reset_code"]:
                 raise ErrorMessage("Wrong code.")
             user = self.dm_session.find(USER, name=username)
+            if user.linked_user is None:
+                raise ErrorMessage("You do not have a user linked, so you cannot reset your password like this. Try commenting on the project for help.")
             if linked_user != user.linked_user:
-                if user.linked_user is None:
-                    raise ErrorMessage("You do not have a user linked, so you cannot reset your password like this. Try commenting on the project for help.")
                 raise ErrorMessage("That is not your linked user.")
             project = self.project
             comment = f"Password reset code: {code}"
@@ -207,7 +207,7 @@ class DMBackend:
             return "OK"
         
         @self.request_handler.request(name="save_dungeon", allow_python_syntax=True, auto_convert=True)
-        def save_dungeon(start_room : RoomId, start_x : int, start_y : int, name : str, dungeon_id=None):
+        def save_dungeon(start_room : RoomId, start_x : int, start_y : int, name : str = None, dungeon_id : DungeonId = None):
             dungeon : Dungeon
             self.ensure_login()
             try:
@@ -221,10 +221,21 @@ class DMBackend:
                     "owner_name": self.current_client_data["username"],
                     "start": ()
                 })
+                if not name:
+                    raise ErrorMessage("You need to pick a name.")
+                if not find_comment(self.project, content=f"Set name of {dungeon.dungeon_id} to {name}"):
+                    raise ErrorMessage(f"Could not confirm name. Comment \"Set name of {dungeon.dungeon_id} to {name}\" and try again.")
+                user = self.find_current_client_user()
+                user.remaining_dungeons -= 1
+                user.owned_dungeons.append(dungeon_id)
+                user.permitted_dungeons.append(dungeon_id)
+                user.write()
             if not dungeon.get_user(self.current_client_data["username"]).permitions.get("edit_infos"):
                 raise ErrorMessage("Not Authorized")
-            #if not find_comment(self.pr)
-            dungeon.name = name
+            if name:
+                if not find_comment(self.project, content=f"Set name of {dungeon.dungeon_id} to {name}"):
+                    raise ErrorMessage(f"Could not confirm name. Comment \"Set name of {dungeon.dungeon_id} to {name}\" and try again.")
+                dungeon.name = name
             dungeon.start = (start_room, start_x, start_y)
             dungeon.write()
             
@@ -240,13 +251,16 @@ class DMBackend:
             try:
                 room = self.dm_session.find(ROOM, room_id)
             except KeyError:
-                dungeon = self.dm_session.find(DUNGEON, bound_dungeon)
-                if not (
-                    (permitions := dungeon.get_user(user_id=self.current_client_data["user_id"]).permitions).get("edit_room") == room_id or
-                    permitions.get("edit_rooms")
-                ):
+                try:
+                    dungeon = self.dm_session.find(DUNGEON, bound_dungeon)
+                except KeyError:
+                    raise ErrorMessage("Dungeon does not exist.")
+                if not dungeon.permissions[self.current_client_data["user_id"]].can_edit_room(room_id=room_id):
                     raise ErrorMessage("Not authorized")
                 room = dungeon.new_room(room_id=room_id)
+                user = self.find_current_client_user()
+                user.remaining_rooms -= 1
+                user.write()
             else:
                 if not room.dungeon_id == bound_dungeon:
                     raise ErrorMessage("Wrong dungeon bound.")
@@ -254,10 +268,7 @@ class DMBackend:
                     dungeon = self.dm_session.find(DUNGEON, bound_dungeon)
                 except KeyError:
                     raise ErrorMessage("Dungeon does not exist.")
-                if not (
-                    (permitions := dungeon.get_user(user_id=self.current_client_data["user_id"]).permitions).get("edit_room") == room_id or
-                    permitions.get("edit_rooms")
-                ):
+                if not dungeon.permissions[self.current_client_data["user_id"]].can_edit_room(room_id=room_id):
                     raise ErrorMessage("Not authorized")
             room.content = content
             room.write()
@@ -293,6 +304,7 @@ class DMBackend:
         
         @self.request_handler.request(name="load_tab", allow_python_syntax=True, auto_convert=True)
         def load_tab(tab : str) -> json.dumps:
+            data = []
             if tab == "popular":
                 data = self.dm_session.get_popular_tab()
             elif tab == "random":
@@ -340,8 +352,6 @@ class DMBackend:
 
 
 
-
-
 def gen_passdata(*, username : str, password : str) -> bytes:
     """
     Generate passdata for an account
@@ -381,9 +391,6 @@ def include_data(data : dict, *, include : list[str] = ()) -> dict:
     for i in include:
         new[i] = data.get(i)
     return new
-
-
-
 
 
 

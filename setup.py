@@ -5,7 +5,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name='dungeonmaker',
-    version='0.6.11',
+    version='0.6.12',
     author='Simon Gilde',
     author_email='simon.c.gilde@gmail.com',
     description='Dungeon maker backend and other things',
@@ -17,7 +17,7 @@ setup(
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
     keywords=['scratch'],
     install_requires=[
@@ -25,5 +25,5 @@ setup(
         'pymongo',
         'scratchattach',
     ],
-    python_requires='>=3.10',
+    python_requires='>=3.11',
 )

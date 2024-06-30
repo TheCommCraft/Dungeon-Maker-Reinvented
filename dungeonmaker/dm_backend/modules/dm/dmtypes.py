@@ -3,6 +3,7 @@ Types used in the dm library
 """
 from __future__ import annotations
 from typing import Literal, Any, Union, Sequence, Mapping
+from weakref import WeakValueDictionary
 from dataclasses import dataclass, field
 import secrets, time
 
@@ -121,8 +122,15 @@ class Permissions(list[Permission]):
             return ([i for i in self if i.type == __type] + [Permission(type=__type, value=None)])[0]
         except IndexError:
             pass
-
-
+    
+    def get_all(self, __type : Any) -> list[Permission]:
+        return [i for i in self if i.type == __type]
+        
+    def can_edit_room(self, *, room_id : RoomId = None, room : BaseRoom = None):
+        room_id = room_id or room.room_id
+        if self.get("edit_rooms"):
+            return True
+        return any(i.value == room_id for i in self.get_all("edit_room"))
 
 class Stats(dict):
     """
@@ -177,6 +185,8 @@ class BaseUser:
     session : BaseDMSession = field(kw_only=True)
     passdata : bytes = field(kw_only=True)
     linked_user : Union[str, None] = field(kw_only=True, default=None)
+    remaining_dungeons : int = field(kw_only=True, default=16)
+    remaining_rooms : int = field(kw_only=True, default=128)
     stats : Stats = field(kw_only=True, default_factory=Stats)
 
 
