@@ -1,6 +1,7 @@
 """
 Submodule for database connections.
 """
+from __future__ import annotations
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from .basetypes import BaseMongoDBAtlasSession

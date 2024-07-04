@@ -43,7 +43,7 @@ class DMBackend:
         self.project_id = project_id
         self.project = get_project(project_id)
         
-    def run(self, *, thread : bool = True, duration : Union[float, int, None] = None):
+    def run(self, *, thread : bool = True, duration : Union[float, int, None] = None, cascade_stop : bool = True):
         """
         Run the program.
         """
@@ -207,7 +207,7 @@ class DMBackend:
             return "OK"
         
         @self.request_handler.request(name="save_dungeon", allow_python_syntax=True, auto_convert=True)
-        def save_dungeon(start_room : RoomId, start_x : int, start_y : int, name : str = None, dungeon_id : DungeonId = None):
+        def save_dungeon(start_room : RoomId, start_x : int, start_y : int, name : str = None, dungeon_id : DungeonId = None) -> json.dumps:
             dungeon : Dungeon
             self.ensure_login()
             try:
@@ -238,6 +238,7 @@ class DMBackend:
                 dungeon.name = name
             dungeon.start = (start_room, start_x, start_y)
             dungeon.write()
+            return {"dungeon_id": dungeon.dungeon_id, "success": True}
             
         @self.request_handler.request(name="save_dungeon_infos", allow_python_syntax=True, auto_convert=True)
         def save_dungeon_infos(dungeon_id : DungeonId) -> str:
@@ -314,13 +315,13 @@ class DMBackend:
             data = [dungeon.to_object() for dungeon in data]
             return data
         
-        self.request_handler.start(thread=thread, duration=duration)
+        return self.request_handler.start(thread=thread, duration=duration, cascade_stop=cascade_stop)
         
-    def stop(self):
+    def stop(self, cascade_stop : bool = True):
         """
         Stop the dungeon maker backend.
         """
-        self.request_handler.stop()
+        self.request_handler.stop(cascade_stop=cascade_stop)
         
     @property
     def current_client_data(self) -> dict:

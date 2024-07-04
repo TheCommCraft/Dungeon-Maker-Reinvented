@@ -1,6 +1,7 @@
 """
 Submodule for Database Abstractions.
 """
+from __future__ import annotations
 from typing import Literal
 from dataclasses import dataclass, field
 from .basetypes import BaseMongoDBAtlasSession

@@ -1,6 +1,7 @@
 """
 Submodule for basetypes.
 """
+from __future__ import annotations
 from dataclasses import dataclass, field
 from pymongo.mongo_client import MongoClient
 from pymongo.database import Database
