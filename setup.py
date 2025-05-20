@@ -5,9 +5,9 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name='dungeonmaker',
-    version='0.6.13',
-    author='Simon Gilde',
-    author_email='simon.c.gilde@gmail.com',
+    version='0.6.14',
+    author='Gine Mosild',
+    author_email='tcc@thecommcraft.de',
     description='Dungeon maker backend and other things',
     long_description=long_description,
     long_description_content_type='text/markdown',
